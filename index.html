@@ -861,7 +861,7 @@
             penaltyHistory: [],
             filters: { guild: 'all', search: '', sortField: 'name', sortOrder: 'asc' },
             analysisFilters: { sortField: 'avg', sortOrder: 'desc', search: '' },
-            analysisGuild: '메인길드',
+            analysisGuild: null,
             isBatchMode: false, pendingUpdates: {},
             isKickMode: false, kickSelection: new Set(),
             calendarView: { year: new Date().getFullYear(), month: new Date().getMonth() },
@@ -1004,8 +1004,8 @@
 
         function formatRankWithSuffix(rank) {
             if (!rank) return '-';
-            const special = ['간부'];
-            if (special.includes(rank)) return `${rank} <span class="text-[8.5px] text-blue-500 font-bold tracking-tighter">(아인슈페너)</span>`;
+            const special = [];
+            if (special.includes(rank)) return `${rank} <span class="text-[8.5px] text-blue-500 font-bold tracking-tighter">(면제)</span>`;
             return rank;
         }
 
@@ -1393,7 +1393,7 @@
                 ];
                 const sorted = [...rules].sort((a,b) => b.min - a.min);
                 for (const r of sorted) { if (score >= r.min) return r.rank; }
-                return sorted.length > 0 ? sorted[sorted.length-1].rank : '스콘';
+                return sorted.length > 0 ? sorted[sorted.length-1].rank : '노블제한';
             };
             
             const scored = targets.map(m => ({
@@ -1405,7 +1405,7 @@
             scored.forEach((m, idx) => {
                 let newRole;
                 if(idx < 3 && m.latestScore > 0) {
-                    newRole = '크라운';
+                    // TOP3 크라운 제거됨 (site_config 규칙 사용)
                 } else {
                     newRole = getRoleByScore(m.latestScore);
                 }
@@ -1423,9 +1423,8 @@
             overlay.className = 'fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4';
             
             const roleColors = {
-                '크라운': 'text-amber-500', '파르페': 'text-emerald-500', '티라미슈': 'text-orange-500',
-                '크로칸슈': 'text-yellow-600', '롤케이크': 'text-rose-400', '팬케이크': 'text-amber-400',
-                '스콘': 'text-gray-500', '와플': 'text-purple-400'
+                '길마': 'text-amber-500', '부마': 'text-emerald-500', '크라운': 'text-amber-500',
+                '5만점이상': 'text-emerald-500', '5만점이하': 'text-gray-500', '노블제한': 'text-red-500'
             };
             
             const rows = changes.map((c, i) => {
@@ -1492,7 +1491,7 @@
                 ];
                 const sorted = [...rules].sort((a,b) => b.min - a.min);
                 for (const r of sorted) { if (score >= r.min) return r.rank; }
-                return sorted.length > 0 ? sorted[sorted.length-1].rank : '뚠스콘';
+                return sorted.length > 0 ? sorted[sorted.length-1].rank : '노블제한';
             };
             
             const scored = targets.map(m => ({
@@ -1516,8 +1515,7 @@
             overlay.className = 'fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4';
             
             const roleColors = {
-                '뚠케이크': 'text-rose-500', '뚠브레드': 'text-amber-500', '수플레': 'text-purple-400',
-                '뚠스콘': 'text-gray-500', '반죽(휴면)': 'text-gray-400'
+                '5만점이상': 'text-emerald-500', '5만점이하': 'text-gray-500', '노블제한': 'text-red-500'
             };
             
             const rows = changes.map((c, i) => {
@@ -1614,7 +1612,7 @@
             document.getElementById('pageTitle').innerText = titles[tab] || '';
             if (tab === 'home') window.renderHome(content);
             else if (tab === 'members') window.renderMembers(content);
-            else if (tab === 'analysis') window.renderAnalysis(content, appState.analysisGuild);
+            else if (tab === 'analysis') window.renderAnalysis(content, appState.analysisGuild || appState.guilds[0]?.name);
             else if (tab === 'suro_input' && isAdmin()) window.renderSuroInput(content);
             else if (tab === 'bail') window.renderBail(content);
             else if (tab === 'penalty') window.renderPenalty(content);
@@ -1690,29 +1688,19 @@
                         <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-[2rem] border border-gray-100 shadow-sm">
                             <h3 class="text-[10px] lg:text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-crown text-emerald-400"></i> ${appState.guilds[0]?.name || '메인길드'} 직위 커트라인</h3>
                             <div class="space-y-1.5 text-[10px] lg:text-[11px] font-bold">
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100"><span class="text-yellow-700">👑 크라운</span><span class="text-yellow-600">TOP 3</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg" style="background:linear-gradient(to right,#EBF0FF,#E8EDFF);border:1px solid #D6DFFF"><span class="text-blue-700">🍨 파르페</span><span class="text-blue-600">130,000~</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg" style="background:linear-gradient(to right,#EBF0FF,#E8EDFF);border:1px solid #D6DFFF"><span class="text-blue-700">🍰 티라미슈</span><span class="text-blue-600">95,000 ~ 129,999</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg" style="background:linear-gradient(to right,#E8FFE8,#E5FAE5);border:1px solid #C8E6C8"><span class="text-green-700">🥐 크로칸슈</span><span class="text-green-600">72,000 ~ 94,999</span></div>
-                                <div class="text-[9px] text-blue-500 font-bold pl-2.5 -mt-0.5 mb-1 flex items-center gap-1"><i class="fas fa-angle-double-up text-[8px]"></i> 크로칸슈 이상 — 부캐 전부 수로 면제</div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-100"><span class="text-emerald-700">🍥 롤케이크</span><span class="text-emerald-600">50,000 ~ 71,999</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-100"><span class="text-emerald-700">🥞 팬케이크</span><span class="text-emerald-600">38,000 ~ 49,999</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-orange-50 border border-orange-100"><span class="text-orange-700">🧇 와플</span><span class="text-orange-500">75,000~ <span class="text-[9px] text-gray-400">(부캐전용)</span></span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-600">🍪 스콘</span><span class="text-gray-500">0 ~ 37,999</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-400">🫓 반죽</span><span class="text-gray-400">휴면</span></div>
+                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100"><span class="text-yellow-700">👑 크라운 (5만점이상)</span><span class="text-yellow-600">50,000~</span></div>
+                                <div class="text-[9px] text-emerald-500 font-bold pl-2.5 -mt-0.5 mb-1 flex items-center gap-1"><i class="fas fa-angle-double-up text-[8px]"></i> 5만점 이상 — 부캐 수로 면제</div>
+                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-600">📋 5만점이하</span><span class="text-gray-500">1 ~ 49,999</span></div>
+                                <div class="text-[9px] text-amber-500 font-bold pl-2.5 -mt-0.5 mb-1 flex items-center gap-1"><i class="fas fa-exclamation-triangle text-[8px]"></i> 5만점 미만 — 부캐도 수로 필수</div>
+                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-red-50 border border-red-100"><span class="text-red-500">🚫 노블제한</span><span class="text-red-400">면제 아닌데 수로 미참여</span></div>
                             </div>
                         </div>
                         <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-[2rem] border border-gray-100 shadow-sm">
                             <h3 class="text-[10px] lg:text-xs font-bold text-rose-500 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-heart text-rose-400"></i> ${appState.guilds[1]?.name || '2기길드'} 직위 커트라인</h3>
                             <div class="space-y-1.5 text-[10px] lg:text-[11px] font-bold">
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-100"><span class="text-emerald-700">🎂 뚠케이크</span><span class="text-emerald-600">18,000~</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-100"><span class="text-emerald-700">🍞 뚠브레드</span><span class="text-emerald-600">5,000 ~ 17,999</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-amber-50 border border-amber-100"><span class="text-amber-700">☕ 아인슈페너</span><span class="text-amber-500">부캐 직위 <span class="text-[9px] text-gray-400">노블O</span></span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-amber-50 border border-amber-100"><span class="text-amber-700">🥞 부팬케이크</span><span class="text-amber-500">부캐 직위 <span class="text-[9px] text-gray-400">노블O</span></span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-orange-50 border border-orange-100"><span class="text-orange-700">🍮 수플레</span><span class="text-orange-500">35,000~ <span class="text-[9px] text-gray-400">(부캐전용)</span></span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-600">🍪 뚠스콘</span><span class="text-gray-500">0 ~ 4,999</span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-600">🍰 부케이크</span><span class="text-gray-400">부캐 직위 <span class="text-[9px]">노블X</span></span></div>
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-400">🫓 반죽</span><span class="text-gray-400">휴면</span></div>
+                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-emerald-50 border border-emerald-100"><span class="text-emerald-700">✅ 5만점이상</span><span class="text-emerald-600">50,000~</span></div>
+                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-600">📋 5만점이하</span><span class="text-gray-500">1 ~ 49,999</span></div>
+                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-red-50 border border-red-100"><span class="text-red-500">🚫 노블제한</span><span class="text-red-400">수로 미참여</span></div>
                             </div>
                         </div>
                     </div>
@@ -2013,6 +2001,7 @@
 
         // --- ANALYSIS ---
         window.renderAnalysis = (container, gName) => {
+            if (!gName) gName = appState.guilds[0]?.name || '모여';
             appState.analysisGuild = gName;
             
             const guildTargets = appState.members.filter(m => m.guild === gName);
@@ -2153,7 +2142,7 @@
             });
 
             const sortIcon = (f) => appState.analysisFilters.sortField === f ? (appState.analysisFilters.sortOrder === 'asc' ? ' <i class="fas fa-sort-up"></i>' : ' <i class="fas fa-sort-down"></i>') : '';
-            const analysisGuildsOptions = appState.guilds.filter(g => !g.type?.includes('부캐')).map(g => g.name);
+            const analysisGuildsOptions = appState.guilds.map(g => g.name);
             
             // ★ 타입별로 텍스트 포맷팅을 다르게 해주는 렌더러
             const renderMvpList = (list, type) => {
@@ -2677,15 +2666,15 @@
                 
                 const targetRole = mainMem ? mainMem.role : (m.isMain ? m.role : '');
                 
-                // 크로칸슈 이상만 좌측 테두리 표시
+                // 직위별 좌측 테두리 표시
                 let rowStyle = "";
-                if (targetRole === '크라운') {
+                if (targetRole === '크라운' || targetRole === '5만점이상') {
                     rowStyle = "background:linear-gradient(to right,#FFF9E6,#FFF3CC);border-left:3px solid #F0C050;";
-                } else if (targetRole === '파르페') {
+                } else if (false) { // removed
                     rowStyle = "background:linear-gradient(to right,#EBF0FF,#E4EAFF);border-left:3px solid #8EA8F0;";
-                } else if (targetRole === '티라미슈') {
+                } else if (false) { // removed
                     rowStyle = "background:linear-gradient(to right,#EBF0FF,#E8EDFF);border-left:3px solid #A0B4E8;";
-                } else if (targetRole === '크로칸슈') {
+                } else if (false) { // removed
                     rowStyle = "background:linear-gradient(to right,#EEFFEE,#E5FAE5);border-left:3px solid #92D050;";
                 }
 
@@ -2695,7 +2684,7 @@
                 const currentClass = pending && pending.class ? pending.class : (m.class || '');
 
                 let roleHtml = `<span class="text-[10px]">${m.role}</span>`;
-                if (!appState.isBatchMode && m.role === '아인슈페너') {
+                if (!appState.isBatchMode && m.role === '면제자') {
                     roleHtml = `<span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold text-white tracking-tight shadow-sm" style="background-color: #FF99FF; text-shadow: 0 1px 1px rgba(0,0,0,0.1);">${m.role}</span>`;
                 }
 
@@ -3649,7 +3638,7 @@
             const roleDisplay = cfg.roleDisplay || {};
             const cutoffs = cfg.cutoffs || {};
             const suroExempt = cfg.suroExempt || [];
-            const suroExemptLabel = cfg.suroExemptLabel || '아인슈페너';
+            const suroExemptLabel = cfg.suroExemptLabel || '면제자';
             const suroExemptNote = cfg.suroExemptNote || '';
             const autoRankRules = cfg.autoRankRules || {};
             const guildStartDate = cfg.guildStartDate || '2020-03-17';
@@ -3801,7 +3790,7 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div><label class="text-[9px] text-gray-400 block mb-1">길드 시작일</label><input type="date" id="cfgStartDate" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${guildStartDate}"></div>
                             <div><label class="text-[9px] text-gray-400 block mb-1">수로 면제 라벨</label><input id="cfgExemptLabel" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${suroExemptLabel}"></div>
-                            <div class="col-span-2"><label class="text-[9px] text-gray-400 block mb-1">수로 면제 안내 문구</label><input id="cfgExemptNote" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${suroExemptNote}" placeholder="예: 크로칸슈 이상 — 부캐 전부 수로 면제"></div>
+                            <div class="col-span-2"><label class="text-[9px] text-gray-400 block mb-1">수로 면제 안내 문구</label><input id="cfgExemptNote" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold outline-none" value="${suroExemptNote}" placeholder="예: 5만점이상 — 부캐 수로 면제"></div>
                         </div>
                     </div>
 
@@ -4476,7 +4465,7 @@
                 members.push({
                     name: name,
                     guild: tr.querySelector('.bulk-guild')?.value || (appState.guilds[0]?.name || '메인길드'),
-                    role: tr.querySelector('.bulk-role')?.value || '팬케이크',
+                    role: tr.querySelector('.bulk-role')?.value || '5만점이하',
                     class: tr.querySelector('.bulk-class')?.value || '',
                     is_main: tr.querySelector('.bulk-isMain')?.checked !== false,
                     main_char_name: tr.querySelector('.bulk-mainChar')?.value.trim() || '',
@@ -6493,8 +6482,8 @@
                 </div>
 
                 <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-5">
-                    <h4 class="text-sm font-black text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2"><i class="fas fa-coffee text-purple-500"></i>아인슈페너 강등 검사</h4>
-                    <p class="text-xs text-gray-500 mb-3">본캐가 크로칸슈 미달인 아인슈페너 멤버를 감지하고, 바로 강등할 수 있습니다. (아인슈페너는 신청제 → 자동 부여 ❌, 강등만)</p>
+                    <h4 class="text-sm font-black text-gray-800 dark:text-gray-100 mb-2 flex items-center gap-2"><i class="fas fa-coffee text-purple-500"></i>강등 검사</h4>
+                    <p class="text-xs text-gray-500 mb-3">본캐 수로 기준 미달 멤버를 감지하고 강등할 수 있습니다.</p>
                     <button onclick="window._checkEinDemotion()" class="px-4 py-2.5 bg-purple-500 hover:bg-purple-600 text-white rounded-xl text-xs font-bold transition-all shadow"><i class="fas fa-search mr-1"></i>강등 대상 검사</button>
                     <div id="einDemotionResult" class="mt-3"></div>
                 </div>
@@ -6513,7 +6502,7 @@
             </div>`;
         };
 
-        // 아인슈페너 강등 대상 검사 + 실제 강등 실행
+        // 강등 대상 검사 + 실제 강등 실행
         // ── 본캐 정보 오기입 검사 ──
         window._checkMainCharErrors = () => {
             const members = appState.members;
@@ -6668,13 +6657,13 @@
         };
 
         window._checkEinDemotion = () => {
-            const einMembers = appState.members.filter(m => m.role === '아인슈페너');
+            const einMembers = appState.members.filter(m => m.role === '면제자');
             if(einMembers.length === 0) {
-                document.getElementById('einDemotionResult').innerHTML = '<p class="text-xs text-gray-400 mt-2">아인슈페너 멤버가 없습니다.</p>';
+                document.getElementById('einDemotionResult').innerHTML = '<p class="text-xs text-gray-400 mt-2">면제 대상 멤버가 없습니다.</p>';
                 return;
             }
 
-            // 본캐별로 아인슈페너 그룹핑
+            // 본캐별로 면제자 그룹핑
             const mainMap = {};
             einMembers.forEach(m => {
                 const mainName = m.mainCharName || '';
@@ -6696,14 +6685,14 @@
                 const altCount = info.allAltCount;
                 const mainRole = mainChar?.role || '알수없음';
 
-                if(['스콘','반죽(휴면)','뚠스콘'].includes(mainRole)) {
+                if(['5만점이하','노블제한'].includes(mainRole)) {
                     einList.forEach(m => {
-                        demotions.push({ name: m.name, guild: m.guild, id: m.id, mainName, mainRole, reason: '본캐 스콘/반죽' });
+                        demotions.push({ name: m.name, guild: m.guild, id: m.id, mainName, mainRole, reason: '본캐 5만점 미달' });
                     });
                     return;
                 }
 
-                if(['팬케이크','롤케이크','부팬케이크','부케이크'].includes(mainRole)) {
+                if(['5만점이상'].includes(mainRole)) {
                     const allowed = Math.floor(altCount / 2);
                     const einCount = einList.length;
                     if(einCount > allowed) {
@@ -6728,7 +6717,7 @@
                 const byGuild = {};
                 demotions.forEach(d => { if(!byGuild[d.guild]) byGuild[d.guild] = []; byGuild[d.guild].push(d); });
                 html += `<div class="bg-red-50 dark:bg-red-900/20 rounded-xl overflow-hidden border border-red-200 dark:border-red-800 mt-2">
-                    <div class="p-3 bg-red-100 dark:bg-red-900/40 text-xs font-bold text-red-700 dark:text-red-300"><i class="fas fa-ban mr-1"></i>본캐 스콘/반죽 \u2014 아인슈페너 전부 압수 (${demotions.length}명)</div>`;
+                    <div class="p-3 bg-red-100 dark:bg-red-900/40 text-xs font-bold text-red-700 dark:text-red-300"><i class="fas fa-ban mr-1"></i>본캐 기준 미달 \u2014 강등 대상 (${demotions.length}명)</div>`;
                 Object.keys(byGuild).sort().forEach(guild => {
                     html += `<div class="px-3 py-1.5 bg-red-50/50 text-[10px] font-bold text-red-500 border-b border-red-100">${guild} (${byGuild[guild].length}명)</div>`;
                     byGuild[guild].forEach(d => {
@@ -6740,20 +6729,20 @@
                     });
                 });
                 html += `<div class="p-3 flex justify-between items-center">
-                    <span class="text-[10px] text-red-400">체크된 멤버의 아인슈페너 직위를 해제합니다.</span>
+                    <span class="text-[10px] text-red-400">체크된 멤버의 직위를 강등합니다.</span>
                     <button onclick="window._executeEinDemotion()" class="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-all shadow"><i class="fas fa-arrow-down mr-1"></i>강등 실행</button>
                 </div></div>`;
             }
 
             if(warnings.length > 0) {
                 html += `<div class="bg-amber-50 dark:bg-amber-900/20 rounded-xl overflow-hidden border border-amber-200 dark:border-amber-800 mt-3">
-                    <div class="p-3 bg-amber-100 dark:bg-amber-900/40 text-xs font-bold text-amber-700 dark:text-amber-300"><i class="fas fa-exclamation-triangle mr-1"></i>면제 초과 \u2014 아인슈페너 수 > 허용수 (${warnings.length}건)</div>`;
+                    <div class="p-3 bg-amber-100 dark:bg-amber-900/40 text-xs font-bold text-amber-700 dark:text-amber-300"><i class="fas fa-exclamation-triangle mr-1"></i>면제 초과 \u2014 면제자 수 > 허용수 (${warnings.length}건)</div>`;
                 warnings.forEach(w => {
                     html += `<div class="p-3 border-b border-amber-100 dark:border-amber-800">
                         <div class="flex items-center gap-2 mb-2 flex-wrap">
                             <span class="font-bold text-amber-700 text-xs">${w.mainName}</span>
                             <span class="text-[10px] text-gray-400">(${w.mainRole})</span>
-                            <span class="text-[10px] bg-amber-200 text-amber-700 px-2 py-0.5 rounded-full font-bold">부캐 ${w.altCount}명 \u00b7 허용 ${w.allowed}명 \u00b7 아인슈페너 ${w.einCount}명 \u00b7 <span class="text-red-600">${w.excess}명 초과</span></span>
+                            <span class="text-[10px] bg-amber-200 text-amber-700 px-2 py-0.5 rounded-full font-bold">부캐 ${w.altCount}명 \u00b7 허용 ${w.allowed}명 \u00b7 면제자 ${w.einCount}명 \u00b7 <span class="text-red-600">${w.excess}명 초과</span></span>
                         </div>
                         <div class="space-y-1">`;
                     w.einList.forEach(e => {
@@ -6763,11 +6752,11 @@
                         </div>`;
                     });
                     html += `</div>
-                        <p class="text-[10px] text-amber-500 mt-2"><i class="fas fa-info-circle mr-1"></i>${w.excess}명의 아인슈페너 직위를 해제하거나, 부캐를 추가 가입해주세요.</p>
+                        <p class="text-[10px] text-amber-500 mt-2"><i class="fas fa-info-circle mr-1"></i>${w.excess}명을 강등하거나 부캐를 추가 가입해주세요.</p>
                     </div>`;
                 });
                 html += `<div class="p-3 flex justify-between items-center">
-                    <span class="text-[10px] text-amber-500">체크한 멤버만 아인슈페너 해제</span>
+                    <span class="text-[10px] text-amber-500">체크한 멤버만 강등 처리</span>
                     <button onclick="window._executeEinWarning()" class="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-bold transition-all shadow"><i class="fas fa-arrow-down mr-1"></i>선택 강등</button>
                 </div></div>`;
             }
@@ -6782,16 +6771,16 @@
             document.querySelectorAll('.ein-chk:checked').forEach(c => checkedIds.add(c.dataset.einId));
             const targets = allDemotions.filter(d => checkedIds.has(d.id));
             if(targets.length === 0) return window.showMsg('선택된 강등 대상이 없습니다.', 'error');
-            if(!confirm(targets.length + '명의 아인슈페너 직위를 해제하시겠습니까?')) return;
+            if(!confirm(targets.length + '명의 직위를 강등하시겠습니까?')) return;
             window.showLoading(true);
             let done = 0;
             for(const t of targets) {
-                const newRole = '신입';
+                const newRole = '노블제한';
                 await supaDb.from('members').update({ role: newRole }).eq('id', t.id);
                 done++;
                 window.setLoadProgress(20 + Math.floor(60 * done / targets.length), `${done}/${targets.length} 강등 중...`);
             }
-            window.showMsg(targets.length + '명 아인슈페너 강등 완료!', 'success');
+            window.showMsg(targets.length + '명 강등 완료!', 'success');
             await window.fetchMembers();
             window.renderRoleAssign(document.getElementById('contentArea'));
             window.showLoading(false);
@@ -6801,18 +6790,18 @@
             const checkedIds = new Set();
             document.querySelectorAll('.ein-warn-chk:checked').forEach(c => checkedIds.add(c.dataset.einId));
             if(checkedIds.size === 0) return window.showMsg('강등할 멤버를 체크해주세요.', 'error');
-            if(!confirm(checkedIds.size + '명의 아인슈페너 직위를 해제하시겠습니까?')) return;
+            if(!confirm(checkedIds.size + '명의 직위를 강등하시겠습니까?')) return;
             window.showLoading(true);
             let done = 0;
             const ids = [...checkedIds];
             for(const id of ids) {
                 const m = appState.members.find(mm => mm.id === id);
-                const newRole = '신입';
+                const newRole = '노블제한';
                 await supaDb.from('members').update({ role: newRole }).eq('id', id);
                 done++;
                 window.setLoadProgress(20 + Math.floor(60 * done / ids.length), `${done}/${ids.length} 강등 중...`);
             }
-            window.showMsg(ids.length + '명 아인슈페너 강등 완료!', 'success');
+            window.showMsg(ids.length + '명 강등 완료!', 'success');
             await window.fetchMembers();
             window.renderRoleAssign(document.getElementById('contentArea'));
             window.showLoading(false);
