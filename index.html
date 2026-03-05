@@ -989,11 +989,7 @@
             const changes = [];
             scored.forEach((m, idx) => {
                 let newRole;
-                if(idx < 3 && m.latestScore > 0) {
-                    newRole = '크라운';
-                } else {
-                    newRole = getRoleByScore(m.latestScore);
-                }
+                newRole = getRoleByScore(m.latestScore);
                 if(m.role !== newRole) {
                     changes.push({ name: m.name, from: m.role, to: newRole, score: m.latestScore });
                 }
@@ -1279,12 +1275,22 @@
                         <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-[2rem] border border-gray-100 shadow-sm">
                             <h3 class="text-[10px] lg:text-xs font-bold text-emerald-500 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-crown text-emerald-400"></i> ${appState.guilds[0]?.name||'메인'} 직위 커트라인</h3>
                             <div class="space-y-1.5 text-[10px] lg:text-[11px] font-bold">
-                                <div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gradient-to-r from-yellow-50 to-amber-50 border border-yellow-100"><span class="text-yellow-700">👑 크라운</span><span class="text-yellow-600">TOP 3</span></div>
+                                ${((SITE_CONFIG?.autoRankRules?.[appState.guilds[0]?.name]) || [{min:50000,rank:'5만점이상'},{min:1,rank:'5만점이하'},{min:0,rank:'노블제한'}]).map(r => {
+                                    const rd = SITE_CONFIG?.roleDisplay?.[r.rank] || {};
+                                    const emoji = rd.emoji || '';
+                                    return `<div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-700">${emoji} ${r.rank}</span><span class="text-gray-500">${r.min.toLocaleString()}${r.min > 0 ? '~' : ' (미참여)'}</span></div>`;
+                                }).join('')}
+                                ${SITE_CONFIG?.suroExemptNote ? `<div class="text-[9px] text-emerald-500 font-bold pl-2.5 mt-1 flex items-center gap-1"><i class="fas fa-angle-double-up text-[8px]"></i> ${SITE_CONFIG.suroExemptNote}</div>` : ''}
                             </div>
                         </div>
                         <div class="bg-white p-4 lg:p-6 rounded-2xl lg:rounded-[2rem] border border-gray-100 shadow-sm">
                             <h3 class="text-[10px] lg:text-xs font-bold text-rose-500 uppercase tracking-widest mb-3 flex items-center gap-2"><i class="fas fa-heart text-rose-400"></i> ${appState.guilds[1]?.name||'부캐'} 직위 커트라인</h3>
                             <div class="space-y-1.5 text-[10px] lg:text-[11px] font-bold">
+                                ${((SITE_CONFIG?.autoRankRules?.[appState.guilds[1]?.name]) || [{min:50000,rank:'5만점이상'},{min:1,rank:'5만점이하'},{min:0,rank:'노블제한'}]).map(r => {
+                                    const rd = SITE_CONFIG?.roleDisplay?.[r.rank] || {};
+                                    const emoji = rd.emoji || '';
+                                    return `<div class="flex justify-between items-center py-1.5 px-2.5 rounded-lg bg-gray-50 border border-gray-100"><span class="text-gray-700">${emoji} ${r.rank}</span><span class="text-gray-500">${r.min.toLocaleString()}${r.min > 0 ? '~' : ' (미참여)'}</span></div>`;
+                                }).join('')}
                             </div>
                         </div>
                     </div>
@@ -2341,22 +2347,15 @@
 
                 const isDark = document.documentElement.classList.contains('dark');
                 let rowStyle = "";
-                if (targetRole === '크라운' || targetRole === '5만점이상') {
-                    rowStyle = isDark 
-                        ? "background:rgba(234,179,8,0.1);border-left:3px solid #F0C050;" 
-                        : "background:linear-gradient(to right,#FFF9E6,#FFF3CC);border-left:3px solid #F0C050;";
-                } else if (false) { // removed
-                    rowStyle = isDark 
-                        ? "background:rgba(99,102,241,0.1);border-left:3px solid #8EA8F0;" 
-                        : "background:linear-gradient(to right,#EBF0FF,#E4EAFF);border-left:3px solid #8EA8F0;";
-                } else if (false) { // removed
-                    rowStyle = isDark 
-                        ? "background:rgba(99,102,241,0.08);border-left:3px solid #A0B4E8;" 
-                        : "background:linear-gradient(to right,#EBF0FF,#E8EDFF);border-left:3px solid #A0B4E8;";
-                } else if (false) { // removed
-                    rowStyle = isDark 
-                        ? "background:rgba(34,197,94,0.1);border-left:3px solid #92D050;" 
-                        : "background:linear-gradient(to right,#EEFFEE,#E5FAE5);border-left:3px solid #92D050;";
+                const _rhl = (SITE_CONFIG?.rowHighlightRoles || {})[m.role] || (SITE_CONFIG?.rowHighlightRoles || {})[targetRole];
+                if (_rhl && _rhl.color) {
+                    const c = _rhl.color;
+                    // Parse hex color to rgba
+                    const hex = c.replace('#','');
+                    const r = parseInt(hex.substring(0,2),16), g = parseInt(hex.substring(2,4),16), b = parseInt(hex.substring(4,6),16);
+                    rowStyle = isDark
+                        ? `background:rgba(${r},${g},${b},0.1);border-left:3px solid ${c};`
+                        : `background:linear-gradient(to right,rgba(${r},${g},${b},0.08),rgba(${r},${g},${b},0.15));border-left:3px solid ${c};`;
                 }
 
                 const pending = appState.pendingUpdates[m.id];
@@ -5462,6 +5461,24 @@
    </div>
 
    <div class="mb-8">
+   <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-paint-roller text-emerald-400 text-xs"></i> 직위별 행 배경색 (줄 색상)</h4>
+   <p class="text-[10px] text-gray-400 mb-3">색상을 지정한 직위는 멤버 목록에서 왼쪽 테두리 + 배경색이 표시됩니다. 불필요하면 비워두세요.</p>
+   <div class="grid grid-cols-1 lg:grid-cols-2 gap-2">
+   ${allRoleNames.map(rName => {
+       const rh = rowHighlight[rName] || {};
+       return `<div class="flex items-center gap-2 bg-gray-50 rounded-xl px-3 py-2 border border-gray-100">
+       <span class="text-xs font-bold text-gray-700 flex-1">${rName}</span>
+       <input type="color" class="cfg-row-highlight-color w-8 h-8 rounded-lg border-0 cursor-pointer" value="${rh.color || '#ffffff'}" data-role="${rName}">
+       <label class="flex items-center gap-1 cursor-pointer">
+       <input type="checkbox" class="cfg-row-highlight-on custom-checkbox" data-role="${rName}" ${rh.color ? 'checked' : ''}>
+       <span class="text-[9px] text-gray-400">사용</span>
+       </label>
+       </div>`;
+   }).join('')}
+   </div>
+   </div>
+
+   <div class="mb-8">
    <h4 class="text-sm text-gray-600 mb-3 flex items-center gap-2"><i class="fas fa-chart-bar text-emerald-400 text-xs"></i> 직위 커트라인</h4>
    <div class="flex gap-2 mb-3">${cutoffsTabsHtml}</div>
    ${cutoffSections}
@@ -5684,6 +5701,16 @@
 
    cfg.suroExempt = [];
    document.querySelectorAll('.cfg-exempt-check:checked').forEach(el => cfg.suroExempt.push(el.value));
+
+   cfg.rowHighlightRoles = {};
+   document.querySelectorAll('.cfg-row-highlight-on').forEach(el => {
+       const rName = el.dataset.role;
+       if (el.checked) {
+           const colorInput = document.querySelector(`.cfg-row-highlight-color[data-role="${rName}"]`);
+           const color = colorInput?.value || '#ffffff';
+           if (color && color !== '#ffffff') cfg.rowHighlightRoles[rName] = { color };
+       }
+   });
 
    cfg.autoRankRules = cfg.autoRankRules || {};
    document.querySelectorAll('.cfg-autorule-min').forEach(el => {
