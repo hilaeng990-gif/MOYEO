@@ -589,7 +589,7 @@
 
         function formatRankWithSuffix(rank) {
             if (!rank) return '-';
-            const special = ['날치'];
+            const special = ['크라운'];
             if (special.includes(rank)) return `${rank} <span class="text-[8.5px] text-blue-500 font-bold tracking-tighter">(면제)</span>`;
             return rank;
         }
